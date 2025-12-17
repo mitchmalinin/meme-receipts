@@ -3,16 +3,15 @@ import type { Candle } from '@/lib/types'
 import {
     formatPrice,
     formatTimeShort,
-    getSecondsUntilNextCandle,
 } from '@/lib/utils'
 import { useCandleStore } from '@/stores/candleStore'
-import { useReceiptStore } from '@/stores/receiptStore'
 import { useTokenStore } from '@/stores/tokenStore'
 import { ANIMATION_SPEEDS, useUIStore } from '@/stores/uiStore'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useRef, useState } from 'react'
 import { CandleReceipt } from '../receipts/CandleReceipt'
 import { TestReceipt } from '../receipts/TestReceipt'
+import { TokenIntroReceipt } from '../receipts/TokenIntroReceipt'
 import { TerminalKeypad } from './TerminalKeypad'
 import { TerminalScreen } from './TerminalScreen'
 
@@ -169,13 +168,10 @@ function CompletedReceipt({
 export function POSTerminal() {
   const isPrinting = useUIStore((state) => state.isPrinting)
   const animationSpeedIndex = useUIStore((state) => state.animationSpeedIndex)
-  const chartTimeframe = useUIStore((state) => state.chartTimeframe)
   const showTestReceipt = useUIStore((state) => state.showTestReceipt)
+  const showTokenIntro = useUIStore((state) => state.showTokenIntro)
   const receiptGenerationKey = useUIStore((state) => state.receiptGenerationKey)
-  const currentCandle = useCandleStore((state) => state.currentCandle)
   const completedCandles = useCandleStore((state) => state.completedCandles)
-  const summaryCount = useReceiptStore((state) => state.summaryCount)
-  const posReceiptLimit = useUIStore((state) => state.posReceiptLimit)
   const selectedToken = useTokenStore((state) => state.selectedToken)
   const { playReceiptPrinting, playButtonPress, playReceiptTear } = useSound()
 
@@ -209,21 +205,20 @@ export function POSTerminal() {
     }
   }, [showTestReceipt, shouldRenderTestReceipt])
 
-  // Wall-clock based timer state
-  const [secondsRemaining, setSecondsRemaining] = useState(() =>
-    getSecondsUntilNextCandle(chartTimeframe)
-  )
+  // Handle token intro receipt - stays as header, doesn't fall off
+  const introTriggerRef = useRef<number>(0) // Track trigger time to prevent double fires
 
-  // Update timer based on wall-clock
+  // Play sound when intro triggers
   useEffect(() => {
-    const updateTimer = () => {
-      setSecondsRemaining(getSecondsUntilNextCandle(chartTimeframe))
+    if (showTokenIntro) {
+      const now = Date.now()
+      // Prevent double trigger within 500ms (React StrictMode protection)
+      if (now - introTriggerRef.current < 500) return
+      introTriggerRef.current = now
+      playReceiptPrinting() // Play print sound
     }
+  }, [showTokenIntro, playReceiptPrinting])
 
-    updateTimer()
-    const interval = setInterval(updateTimer, 1000)
-    return () => clearInterval(interval)
-  }, [chartTimeframe])
 
   // Play receipt printing sound when a new candle completes
   // Play tear sound when candles are cleared (length decreases)
@@ -359,7 +354,7 @@ export function POSTerminal() {
             )}
           </AnimatePresence>
 
-          {/* Regular Receipts - appear after test receipt exit completes (2s delay) */}
+          {/* Token Intro + Receipts - intro stays as header, receipts print below */}
           {!shouldRenderTestReceipt && (
             <AnimatePresence mode="popLayout">
               <motion.div
@@ -373,7 +368,8 @@ export function POSTerminal() {
                 }}
                 className="relative z-10"
               >
-                {completedCandles.length > 0 && (
+                {/* Torn top edge - visible on exit */}
+                {(showTokenIntro || completedCandles.length > 0) && (
                   <motion.div
                     className="h-4 torn-edge-top w-full absolute -top-4 left-0 z-20"
                     variants={{
@@ -383,11 +379,15 @@ export function POSTerminal() {
                     }}
                   />
                 )}
+
+                {/* Regular Receipts - print on top of intro (newest first) */}
                 {completedCandles
                   .slice()
                   .reverse()
                   .map((candle, index) => {
                     const receiptNumber = completedCandles.length - index
+                    // Only show torn edge on first receipt if there's no token intro below it
+                    const showTornEdge = receiptNumber === 1 && !showTokenIntro
                     return (
                       <motion.div
                         key={`desktop-${candle.id}`}
@@ -406,13 +406,38 @@ export function POSTerminal() {
                             <CompletedReceipt
                               candle={candle}
                               receiptNumber={receiptNumber}
-                              isFirst={receiptNumber === 1}
+                              isFirst={showTornEdge}
                             />
                           </div>
                         </motion.div>
                       </motion.div>
                     )
                   })}
+
+                {/* Token Intro - prints first, appears at bottom as receipts stack on top */}
+                {showTokenIntro && (
+                  <motion.div
+                    key="token-intro-desktop"
+                    layout
+                    initial={{ height: 0 }}
+                    animate={{ height: 'auto' }}
+                    transition={{ duration: animationDuration, ease: 'linear' }}
+                    className="relative z-10 shrink-0 origin-top"
+                  >
+                    <div className="overflow-hidden">
+                      <motion.div
+                        initial={{ y: '-100%' }}
+                        animate={{ y: '0%' }}
+                        transition={{
+                          duration: animationDuration,
+                          ease: 'linear',
+                        }}
+                      >
+                        <TokenIntroReceipt />
+                      </motion.div>
+                    </div>
+                  </motion.div>
+                )}
               </motion.div>
             </AnimatePresence>
           )}
@@ -459,7 +484,7 @@ export function POSTerminal() {
             )}
           </AnimatePresence>
 
-          {/* Regular Receipts - appear after test receipt exit completes (2s delay) */}
+          {/* Token Intro + Receipts - intro stays as header, receipts print below */}
           {!shouldRenderTestReceipt && (
             <AnimatePresence mode="popLayout">
               <motion.div
@@ -473,7 +498,8 @@ export function POSTerminal() {
                 }}
                 className="relative z-10"
               >
-                {completedCandles.length > 0 && (
+                {/* Torn top edge - visible on exit */}
+                {(showTokenIntro || completedCandles.length > 0) && (
                   <motion.div
                     className="h-4 torn-edge-top w-full absolute -top-4 left-[2px] z-20"
                     variants={{
@@ -483,11 +509,15 @@ export function POSTerminal() {
                     }}
                   />
                 )}
+
+                {/* Regular Receipts - print on top of intro (newest first) */}
                 {completedCandles
                   .slice()
                   .reverse()
                   .map((candle, index) => {
                     const receiptNumber = completedCandles.length - index
+                    // Only show torn edge on first receipt if there's no token intro below it
+                    const showTornEdge = receiptNumber === 1 && !showTokenIntro
                     return (
                       <motion.div
                         key={`mobile-${candle.id}`}
@@ -506,7 +536,7 @@ export function POSTerminal() {
                             <CandleReceipt
                               candle={candle}
                               receiptNumber={receiptNumber}
-                              isFirst={receiptNumber === 1}
+                              isFirst={showTornEdge}
                               showSignature
                             />
                           </div>
@@ -514,6 +544,31 @@ export function POSTerminal() {
                       </motion.div>
                     )
                   })}
+
+                {/* Token Intro - prints first, appears at bottom as receipts stack on top */}
+                {showTokenIntro && (
+                  <motion.div
+                    key="token-intro-mobile"
+                    layout
+                    initial={{ height: 0 }}
+                    animate={{ height: 'auto' }}
+                    transition={{ duration: animationDuration, ease: 'linear' }}
+                    className="relative z-10 shrink-0 origin-top"
+                  >
+                    <div className="overflow-hidden">
+                      <motion.div
+                        initial={{ y: '-100%' }}
+                        animate={{ y: '0%' }}
+                        transition={{
+                          duration: animationDuration,
+                          ease: 'linear',
+                        }}
+                      >
+                        <TokenIntroReceipt />
+                      </motion.div>
+                    </div>
+                  </motion.div>
+                )}
               </motion.div>
             </AnimatePresence>
           )}

@@ -179,6 +179,9 @@ export const useTokenStore = create<TokenState>()(
             searchResults: [],
           });
 
+          // Trigger token intro receipt
+          useUIStore.getState().triggerTokenIntro(tokenInfo.symbol);
+
           // Fetch historical OHLCV data from Solana Tracker
           try {
             const { chartTimeframe } = useUIStore.getState();
@@ -244,6 +247,9 @@ export const useTokenStore = create<TokenState>()(
             searchQuery: '',
             searchResults: [],
           });
+
+          // Trigger token intro receipt
+          useUIStore.getState().triggerTokenIntro(tokenInfo.symbol);
 
           // Fetch historical OHLCV data from Solana Tracker
           try {

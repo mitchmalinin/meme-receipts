@@ -62,6 +62,9 @@ interface UIState {
   // Test receipt state (shows once on initial page load)
   showTestReceipt: boolean;
   receiptGenerationKey: number;
+  // Token intro receipt state (shows when new token is selected)
+  showTokenIntro: boolean;
+  tokenIntroTicker: string | null;
 
   // Actions
   setFilter: (filter: TradeFilter) => void;
@@ -75,6 +78,8 @@ interface UIState {
   incrementSessionReceipts: () => void;
   resetPaper: () => void;
   hideTestReceipt: () => void;
+  triggerTokenIntro: (ticker: string) => void;
+  hideTokenIntro: () => void;
   reset: () => void;
 }
 
@@ -91,6 +96,8 @@ export const useUIStore = create<UIState>()((set) => ({
   isOutOfPaper: false,
   showTestReceipt: true, // Show test receipt on initial page load
   receiptGenerationKey: 0,
+  showTokenIntro: false,
+  tokenIntroTicker: null,
 
   setFilter: (filter) =>
     set({
@@ -150,6 +157,21 @@ export const useUIStore = create<UIState>()((set) => ({
   hideTestReceipt: () =>
     set((state) => ({
       showTestReceipt: false,
+      receiptGenerationKey: state.receiptGenerationKey + 1,
+    })),
+
+  triggerTokenIntro: (ticker: string) =>
+    set((state) => ({
+      showTokenIntro: true,
+      tokenIntroTicker: ticker,
+      receiptGenerationKey: state.receiptGenerationKey + 1,
+    })),
+
+  hideTokenIntro: () =>
+    set((state) => ({
+      showTokenIntro: false,
+      // Don't clear ticker here - it's needed during exit animation
+      // Ticker will be overwritten on next triggerTokenIntro call
       receiptGenerationKey: state.receiptGenerationKey + 1,
     })),
 

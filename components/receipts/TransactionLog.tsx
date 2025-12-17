@@ -6,11 +6,14 @@ import { ANIMATION_SPEEDS, useUIStore } from '@/stores/uiStore';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useRef } from 'react';
 import { CandleReceipt } from './CandleReceipt';
+import { TokenIntroReceipt } from './TokenIntroReceipt';
 
 
 export function TransactionLog() {
   const completedCandles = useCandleStore((state) => state.completedCandles);
   const animationSpeedIndex = useUIStore((state) => state.animationSpeedIndex);
+  const showTestReceipt = useUIStore((state) => state.showTestReceipt);
+  const showTokenIntro = useUIStore((state) => state.showTokenIntro);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Show all candles - they print simultaneously on both sides
@@ -39,33 +42,79 @@ export function TransactionLog() {
             className="h-auto lg:h-full overflow-visible lg:overflow-y-auto overflow-x-hidden flex justify-center"
           >
             <div className="w-full max-w-[300px] px-6 lg:px-0">
-              {/* All receipts - newest first */}
-              <AnimatePresence initial={false} mode="popLayout">
-                <motion.div
-                  key={useTokenStore.getState().selectedToken?.address || 'empty'}
-                  initial={{ opacity: 1 }}
-                  animate={{ opacity: 1 }}
-                  exit={{
-                    y: 1200,
-                    opacity: 1,
-                    transition: { duration: 2, ease: [0.4, 0, 1, 1] },
-                  }}
-                  className="relative z-10"
-                >
-                  {/* Torn top edge - visible on exit */}
-                  {displayCandles.length > 0 && (
-                    <motion.div
-                      className="h-4 torn-edge-top w-full absolute -top-4 left-0 z-20"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 0 }}
-                      exit={{ opacity: 1, transition: { duration: 0 } }}
-                    />
-                  )}
-                  {displayCandles.map((candle, index) => {
-                    const receiptNumber = completedCandles.length - index;
-                    return (
+              {/* Token Intro + Receipts - only show when test receipt is done */}
+              {!showTestReceipt && (
+                <AnimatePresence initial={false} mode="popLayout">
+                  <motion.div
+                    key={useTokenStore.getState().selectedToken?.address || 'empty'}
+                    initial={{ opacity: 1 }}
+                    animate={{ opacity: 1 }}
+                    exit={{
+                      y: 1200,
+                      opacity: 1,
+                      transition: { duration: 2, ease: [0.4, 0, 1, 1] },
+                    }}
+                    className="relative z-10"
+                  >
+                    {/* Torn top edge - visible on exit */}
+                    {(showTokenIntro || displayCandles.length > 0) && (
                       <motion.div
-                        key={candle.id}
+                        className="h-4 torn-edge-top w-full absolute -top-4 left-0 z-20"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 0 }}
+                        exit={{ opacity: 1, transition: { duration: 0 } }}
+                      />
+                    )}
+
+                    {/* Regular Receipts - print on top of intro (newest first) */}
+                    {displayCandles.map((candle, index) => {
+                      const receiptNumber = completedCandles.length - index;
+                      // Only show torn edge on first receipt if there's no token intro below it
+                      const showTornEdge = receiptNumber === 1 && !showTokenIntro;
+                      return (
+                        <motion.div
+                          key={candle.id}
+                          layout
+                          initial="initial"
+                          animate="animate"
+                          variants={{
+                            initial: { height: 0, opacity: 1 },
+                            animate: { height: 'auto', opacity: 1 },
+                          }}
+                          transition={{
+                            layout: { duration: currentSpeed.duration, ease: "linear" },
+                            height: { duration: currentSpeed.duration, ease: "linear" },
+                          }}
+                          className="mb-0 relative z-10 overflow-hidden origin-top -mb-[2px]"
+                        >
+                          {/* Inner wrapper handles the slide down effect */}
+                          <motion.div
+                            variants={{
+                              initial: { y: '-100%' },
+                              animate: { y: '0%' },
+                            }}
+                            transition={{
+                              duration: currentSpeed.duration,
+                              ease: "linear"
+                            }}
+                          >
+                            <div className="relative z-10 shadow-sm">
+                              <CandleReceipt
+                                candle={candle}
+                                receiptNumber={receiptNumber}
+                                isFirst={showTornEdge}
+                                showSignature
+                              />
+                            </div>
+                          </motion.div>
+                        </motion.div>
+                      );
+                    })}
+
+                    {/* Token Intro - prints first, appears at bottom as receipts stack on top */}
+                    {showTokenIntro && (
+                      <motion.div
+                        key="token-intro-log"
                         layout
                         initial="initial"
                         animate="animate"
@@ -77,9 +126,8 @@ export function TransactionLog() {
                           layout: { duration: currentSpeed.duration, ease: "linear" },
                           height: { duration: currentSpeed.duration, ease: "linear" },
                         }}
-                        className="mb-0 relative z-10 overflow-hidden origin-top -mb-[2px]"
+                        className="mb-0 relative z-10 overflow-hidden origin-top"
                       >
-                        {/* Inner wrapper handles the slide down effect */}
                         <motion.div
                           variants={{
                             initial: { y: '-100%' },
@@ -91,19 +139,14 @@ export function TransactionLog() {
                           }}
                         >
                           <div className="relative z-10 shadow-sm">
-                            <CandleReceipt
-                              candle={candle}
-                              receiptNumber={receiptNumber}
-                              isFirst={receiptNumber === 1}
-                              showSignature
-                            />
+                            <TokenIntroReceipt />
                           </div>
                         </motion.div>
                       </motion.div>
-                    );
-                  })}
-                </motion.div>
-              </AnimatePresence>
+                    )}
+                  </motion.div>
+                </AnimatePresence>
+              )}
 
               {/* Bottom spacing for scroll */}
               <div className="h-12" />
@@ -117,4 +160,3 @@ export function TransactionLog() {
     </section>
   );
 }
-
