@@ -233,7 +233,7 @@ export function CandleReceipt({ candle, receiptNumber, isFirst, showSignature }:
           )}
         </AnimatePresence>
         {/* Footer decorations */}
-        <div className="pt-4 pb-2 text-center opacity-50 text-[10px]">
+        <div className="pt-2 pb-2 text-center opacity-50 text-[10px]">
           . . . . . . . . . . . . . . .
         </div>
       </div>

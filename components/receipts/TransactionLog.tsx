@@ -70,8 +70,8 @@ export function TransactionLog() {
                           animate: { height: 'auto', opacity: 1 },
                         }}
                         transition={{
-                          layout: { duration: currentSpeed.duration, ease: "linear", delay: index === 0 ? currentSpeed.duration * 0.4 : 0 },
-                          height: { duration: currentSpeed.duration, ease: "linear", delay: index === 0 ? currentSpeed.duration * 0.4 : 0 },
+                          layout: { duration: currentSpeed.duration, ease: "linear" },
+                          height: { duration: currentSpeed.duration, ease: "linear" },
                         }}
                         className="mb-0 relative z-10 overflow-hidden origin-top -mb-[2px]"
                       >
@@ -83,8 +83,7 @@ export function TransactionLog() {
                           }}
                           transition={{
                             duration: currentSpeed.duration,
-                            ease: "linear",
-                            delay: index === 0 ? currentSpeed.duration * 0.4 : 0
+                            ease: "linear"
                           }}
                         >
                           <div className="relative z-10 shadow-sm">
