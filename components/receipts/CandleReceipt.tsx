@@ -145,9 +145,9 @@ export function CandleReceipt({ candle, receiptNumber, isFirst, showSignature }:
 
           {/* Signature - only on transaction log */}
           {showSignature && (
-            <div className="flex items-end gap-2 mt-3 mb-1">
+            <div className="flex items-end gap-3 mt-3 mb-2">
               <span className="text-[9px] text-gray-400 uppercase tracking-wider">Signature</span>
-              <span className="flex-1 border-b border-dashed border-gray-300" />
+              <span className="flex-1 border-b border-dashed border-gray-300 mb-1" />
               <svg
                 viewBox="0 0 100 30"
                 className="w-16 h-5 text-gray-500 -mb-1"
@@ -171,7 +171,7 @@ export function CandleReceipt({ candle, receiptNumber, isFirst, showSignature }:
 
           {/* Expand indicator - only show if there are trades to view */}
           {hasTrades && (
-            <div className="text-center text-xs text-gray-500 border-t border-dashed border-gray-300 pt-2">
+            <div className="text-center text-xs text-gray-500 pt-1">
               [ {isExpanded ? 'HIDE ORDERS' : `VIEW ${candle.trades.length} ORDERS`} ]
             </div>
           )}
