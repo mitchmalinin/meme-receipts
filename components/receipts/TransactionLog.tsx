@@ -11,11 +11,10 @@ import { CandleReceipt } from './CandleReceipt';
 export function TransactionLog() {
   const completedCandles = useCandleStore((state) => state.completedCandles);
   const animationSpeedIndex = useUIStore((state) => state.animationSpeedIndex);
-  const posReceiptLimit = useUIStore((state) => state.posReceiptLimit);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Get history candles (skipping the newest which are on POS)
-  const displayCandles = completedCandles.slice(0, -posReceiptLimit).reverse();
+  // Show all candles - they print simultaneously on both sides
+  const displayCandles = [...completedCandles].reverse();
 
   const currentSpeed = ANIMATION_SPEEDS[animationSpeedIndex];
 
@@ -59,7 +58,7 @@ export function TransactionLog() {
                   className="relative z-10"
                 >
                   {displayCandles.map((candle, index) => {
-                    const receiptNumber = completedCandles.length - posReceiptLimit - index;
+                    const receiptNumber = completedCandles.length - index;
                     return (
                       <motion.div
                         key={candle.id}
