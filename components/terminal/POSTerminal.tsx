@@ -507,6 +507,7 @@ export function POSTerminal() {
                               candle={candle}
                               receiptNumber={receiptNumber}
                               isFirst={receiptNumber === 1}
+                              showSignature
                             />
                           </div>
                         </motion.div>
