@@ -1,7 +1,7 @@
 'use client';
 
 import type { Candle } from '@/lib/types';
-import { formatPrice, formatSol, formatTimeShort, truncateWallet } from '@/lib/utils';
+import { formatPrice, formatTimeShort } from '@/lib/utils';
 import { useTokenStore } from '@/stores/tokenStore';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useState } from 'react';
@@ -166,36 +166,23 @@ export function CandleReceipt({ candle, receiptNumber, isFirst }: CandleReceiptP
               {/* Order list header */}
               <div className="border-t border-dashed border-gray-400 mx-4" />
               <div className="px-4 py-2 text-center">
-                <span className="text-[10px] text-gray-400 tracking-widest">─────── ITEMIZED ORDERS ───────</span>
+                <span className="text-[10px] text-gray-400 tracking-widest">───── ORDERS ─────</span>
               </div>
 
               {/* Trade rows - receipt style */}
-              <div className="px-4 pb-4 space-y-2">
+              <div className="px-4 pb-4 space-y-3">
                 {candle.trades.map((trade, idx) => (
                   <div key={trade.id} className="text-xs font-mono">
-                    {/* Top row: number, time, side */}
-                    <div className="flex justify-between items-center">
+                    {/* Header row: number and side */}
+                    <div className="flex items-center gap-2 mb-1">
                       <span className="text-gray-500">#{String(idx + 1).padStart(2, '0')}</span>
-                      <span className="text-gray-600">{formatTimeShort(trade.timestamp)}</span>
                       <span className={`font-semibold ${trade.side === 'buy' ? 'text-green-700' : 'text-red-700'}`}>
                         {trade.side.toUpperCase()}
                       </span>
-                      {trade.signature ? (
-                        <a
-                          href={`https://solscan.io/tx/${trade.signature}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-gray-700 hover:text-gray-900 text-[10px] underline"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {truncateWallet(trade.wallet)}
-                        </a>
-                      ) : (
-                        <span className="text-gray-400 text-[10px]">{truncateWallet(trade.wallet)}</span>
-                      )}
+                      <span className="text-gray-400 text-[10px]">{formatTimeShort(trade.timestamp)}</span>
                     </div>
-                    {/* Bottom row: token amount and SOL value */}
-                    <div className="flex items-baseline mt-0.5">
+                    {/* Amount line */}
+                    <div className="flex items-baseline">
                       <span className="text-gray-400 text-[10px]">AMT</span>
                       <span className="flex-1 border-b border-dotted border-gray-300 mx-2" />
                       <span className="font-semibold text-gray-700">
@@ -204,7 +191,7 @@ export function CandleReceipt({ candle, receiptNumber, isFirst }: CandleReceiptP
                           : trade.tokenAmount >= 1000
                             ? `${(trade.tokenAmount / 1000).toFixed(2)}K`
                             : trade.tokenAmount.toFixed(2)
-                        } {tokenTicker} ({formatSol(trade.solAmount)} SOL)
+                        } {tokenTicker}
                       </span>
                     </div>
                   </div>
