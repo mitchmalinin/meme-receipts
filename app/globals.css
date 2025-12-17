@@ -1,26 +1,298 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Background colors */
+  --background: #f3f4f6;
+  --background-dark: #0a0a0a;
+  --panel: #ffffff;
+  --panel-dark: #121212;
+
+  /* Terminal colors */
+  --terminal: #d4d4d8;
+  --terminal-dark: #1a1a1a;
+  --terminal-screen: #000000;
+
+  /* Paper colors */
+  --paper: #fffdf5;
+  --paper-dim: #f2f0e6;
+  --paper-dark: #e5e5e5;
+
+  /* Primary / Accent */
+  --primary: #22c55e;
+  --primary-dark: #16a34a;
+
+  /* Trading colors */
+  --color-buy: #22c55e;
+  --color-sell: #ef4444;
+  --color-whale: #22c55e;
+
+  /* Text */
+  --foreground: #1f2937;
+  --foreground-dark: #d1d5db;
+
+  /* Grays */
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+  --gray-900: #111827;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-mono: 'Space Mono', monospace;
+  --font-display: 'Space Mono', monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  font-family: 'Space Mono', monospace;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Space Mono', monospace;
+  overflow: hidden;
+}
+
+.dark body {
+  background: var(--background-dark);
+  color: var(--foreground-dark);
+}
+
+/* Thermal paper styling */
+.thermal-paper {
+  background-color: var(--paper);
+  color: #262626;
+  position: relative;
+  font-family: 'Space Mono', monospace;
+  text-shadow: 0 0 1px rgba(0, 0, 0, 0.1);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.thermal-paper:hover,
+.thermal-paper:focus,
+.thermal-paper:active {
+  background-color: var(--paper);
+}
+
+.dark .thermal-paper {
+  background-color: var(--paper-dark);
+  color: #1a1a1a;
+}
+
+.dark .thermal-paper:hover,
+.dark .thermal-paper:focus,
+.dark .thermal-paper:active {
+  background-color: var(--paper-dark);
+}
+
+/* Jagged paper edges */
+.jagged-bottom::after {
+  content: "";
+  position: absolute;
+  bottom: -6px;
+  left: 0;
+  width: 100%;
+  height: 12px;
+  background:
+    linear-gradient(45deg, transparent 33.333%, var(--paper) 33.333%, var(--paper) 66.667%, transparent 66.667%),
+    linear-gradient(-45deg, transparent 33.333%, var(--paper) 33.333%, var(--paper) 66.667%, transparent 66.667%);
+  background-size: 12px 24px;
+  background-position: 0 -12px;
+  background-repeat: repeat-x;
+  z-index: 10;
+}
+
+.dark .jagged-bottom::after {
+  background:
+    linear-gradient(45deg, transparent 33.333%, var(--paper-dark) 33.333%, var(--paper-dark) 66.667%, transparent 66.667%),
+    linear-gradient(-45deg, transparent 33.333%, var(--paper-dark) 33.333%, var(--paper-dark) 66.667%, transparent 66.667%);
+  background-size: 12px 24px;
+  background-position: 0 -12px;
+  background-repeat: repeat-x;
+}
+
+.jagged-top::before {
+  content: "";
+  position: absolute;
+  top: -6px;
+  left: 0;
+  width: 100%;
+  height: 12px;
+  background:
+    linear-gradient(135deg, transparent 33.333%, var(--paper) 33.333%, var(--paper) 66.667%, transparent 66.667%),
+    linear-gradient(225deg, transparent 33.333%, var(--paper) 33.333%, var(--paper) 66.667%, transparent 66.667%);
+  background-size: 12px 24px;
+  background-position: 0 0;
+  background-repeat: repeat-x;
+  z-index: 10;
+}
+
+.dark .jagged-top::before {
+  background:
+    linear-gradient(135deg, transparent 33.333%, var(--paper-dark) 33.333%, var(--paper-dark) 66.667%, transparent 66.667%),
+    linear-gradient(225deg, transparent 33.333%, var(--paper-dark) 33.333%, var(--paper-dark) 66.667%, transparent 66.667%);
+  background-size: 12px 24px;
+  background-position: 0 0;
+  background-repeat: repeat-x;
+}
+
+/* Torn/ripped paper bottom edge - triangles pointing DOWN (away from receipt) */
+.torn-edge-bottom {
+  margin-top: -2px; /* Connect to receipt above */
+  background:
+    linear-gradient(135deg, #fffdf5 50%, transparent 50%),
+    linear-gradient(-135deg, #fffdf5 50%, transparent 50%);
+  background-size: 10px 100%;
+  background-repeat: repeat-x;
+  background-position: 0 0;
+}
+
+.dark .torn-edge-bottom {
+  margin-top: -2px;
+  background:
+    linear-gradient(135deg, #e8e8e0 50%, transparent 50%),
+    linear-gradient(-135deg, #e8e8e0 50%, transparent 50%);
+  background-size: 10px 100%;
+  background-repeat: repeat-x;
+  background-position: 0 0;
+}
+
+/* Scanlines effect for screen */
+.scanlines {
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0),
+    rgba(255, 255, 255, 0) 50%,
+    rgba(0, 0, 0, 0.1) 50%,
+    rgba(0, 0, 0, 0.1)
+  );
+  background-size: 100% 4px;
+}
+
+/* Print animation */
+.print-anim {
+  animation: printDown 0.5s ease-out forwards;
+}
+
+@keyframes printDown {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Receipt sway animation */
+@keyframes sway {
+  0%, 100% {
+    transform: rotate(-0.3deg);
+  }
+  50% {
+    transform: rotate(0.3deg);
+  }
+}
+
+.receipt-sway {
+  animation: sway 4s ease-in-out infinite;
+}
+
+/* Terminal shadow */
+.shadow-terminal {
+  box-shadow:
+    0 25px 50px -12px rgba(0, 0, 0, 0.5),
+    0 10px 15px -3px rgba(0, 0, 0, 0.3);
+}
+
+/* Inner screen shadow */
+.shadow-inner-screen {
+  box-shadow: inset 0 2px 6px 0 rgba(0, 0, 0, 0.8);
+}
+
+/* Paper shadow */
+.shadow-paper {
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #a1a1aa;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #71717a;
+}
+
+/* Button press effect */
+.btn-press {
+  transition: all 0.1s ease;
+}
+
+.btn-press:hover {
+  border-bottom-width: 2px;
+  transform: translateY(2px);
+}
+
+.btn-press:active {
+  border-bottom-width: 0;
+  transform: translateY(4px);
+}
+
+/* Dot pattern background */
+.dot-pattern {
+  background-image: radial-gradient(circle, #888 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* Cross pattern background */
+.cross-pattern {
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* Noise texture overlay */
+.noise-overlay {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+/* Pulse animation for live indicator */
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.8);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+.pulse-ring {
+  animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+}
+
+/* Gradient fade at bottom of scroll area */
+.fade-bottom {
+  mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
 }
