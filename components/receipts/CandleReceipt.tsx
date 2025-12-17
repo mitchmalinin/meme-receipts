@@ -59,17 +59,43 @@ export function CandleReceipt({ candle, receiptNumber, isFirst, showSignature }:
           {/* Divider */}
           <div className="border-t border-dashed border-gray-300 mb-3" />
 
-          {/* Idle Receipt Message */}
+          {/* Idle Receipt Message - ASCII art style */}
           {isIdle && (
-            <div className="text-center py-4 mb-3">
-              <div className="text-gray-500 text-xs font-bold tracking-wider mb-2">
-                ⏸ LOW VOLUME
+            <div className="py-2 mb-3 text-gray-500">
+              {/* ASCII art border */}
+              <div className="text-center text-[10px] tracking-widest mb-2">
+                ╔══════════════════════╗
               </div>
-              <div className="text-gray-400 text-[10px]">
-                No trades in this period
+              <div className="text-center text-[10px] tracking-widest">
+                ║{'  '}. . . Z Z Z . . .{'  '}║
               </div>
-              <div className="text-gray-400 text-[10px] mt-1">
-                Price: {formatPrice(candle.close)}
+              <div className="text-center text-xs font-bold tracking-wider my-1">
+                ║{'    '}NO ACTIVITY{'    '}║
+              </div>
+              <div className="text-center text-[10px] tracking-widest">
+                ║{'  '}. . . Z Z Z . . .{'  '}║
+              </div>
+              <div className="text-center text-[10px] tracking-widest mt-2">
+                ╚══════════════════════╝
+              </div>
+
+              {/* Status info */}
+              <div className="mt-3 space-y-1 text-[10px]">
+                <div className="flex items-baseline">
+                  <span className="opacity-60">STATUS</span>
+                  <span className="flex-1 border-b border-dotted border-gray-400 mx-2" />
+                  <span className="font-semibold">WAITING</span>
+                </div>
+                <div className="flex items-baseline">
+                  <span className="opacity-60">TRADES</span>
+                  <span className="flex-1 border-b border-dotted border-gray-400 mx-2" />
+                  <span className="font-semibold">0</span>
+                </div>
+                <div className="flex items-baseline">
+                  <span className="opacity-60">LAST PRICE</span>
+                  <span className="flex-1 border-b border-dotted border-gray-400 mx-2" />
+                  <span className="font-semibold">{formatPrice(candle.close)}</span>
+                </div>
               </div>
             </div>
           )}

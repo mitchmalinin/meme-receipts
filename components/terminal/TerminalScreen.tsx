@@ -127,7 +127,30 @@ export function TerminalScreen() {
       lastCandleTimeRef.current = 0;
       lastKnownPriceRef.current = 0;
     }
-  }, [selectedToken?.address, selectedPair?.priceUsd, initializeSnapshot, resetSnapshot]);
+  }, [selectedToken?.address, initializeSnapshot, resetSnapshot]);
+
+  // Update price from pair data (separate effect to handle late-arriving price)
+  useEffect(() => {
+    if (selectedPair?.priceUsd && selectedToken?.address) {
+      const pairPrice = parseFloat(selectedPair.priceUsd);
+      if (pairPrice > 0 && lastKnownPriceRef.current === 0) {
+        lastKnownPriceRef.current = pairPrice;
+        console.log('[TerminalScreen] Updated price from pair:', pairPrice);
+      }
+    }
+  }, [selectedPair?.priceUsd, selectedToken?.address]);
+
+  // Also update price from chart data (most reliable source)
+  useEffect(() => {
+    const chartData = useCandleStore.getState().chartData;
+    if (chartData.length > 0 && selectedToken?.address) {
+      const lastCandle = chartData[chartData.length - 1];
+      if (lastCandle.close > 0) {
+        lastKnownPriceRef.current = lastCandle.close;
+        console.log('[TerminalScreen] Updated price from chart:', lastCandle.close);
+      }
+    }
+  }, [selectedToken?.address]);
 
   // Print an idle receipt when no activity
   const printIdleReceipt = useCallback(() => {
@@ -201,8 +224,20 @@ export function TerminalScreen() {
     idleIntervalRef.current = setInterval(() => {
       const timeSinceLastCandle = Date.now() - lastCandleTimeRef.current;
 
+      // Try to get price from chart data if we don't have it yet
+      if (lastKnownPriceRef.current === 0) {
+        const chartData = useCandleStore.getState().chartData;
+        if (chartData.length > 0) {
+          const lastCandle = chartData[chartData.length - 1];
+          if (lastCandle.close > 0) {
+            lastKnownPriceRef.current = lastCandle.close;
+            console.log('[TerminalScreen] Got price from chart data:', lastCandle.close);
+          }
+        }
+      }
+
       if (timeSinceLastCandle >= IDLE_TIMEOUT_MS) {
-        console.log(`[TerminalScreen] Idle detected: ${Math.round(timeSinceLastCandle / 1000)}s since last candle`);
+        console.log(`[TerminalScreen] Idle detected: ${Math.round(timeSinceLastCandle / 1000)}s since last candle, price: ${lastKnownPriceRef.current}`);
         printIdleReceipt();
       }
     }, 5000);
