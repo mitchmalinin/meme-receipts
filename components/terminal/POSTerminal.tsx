@@ -1,15 +1,13 @@
-'use client';
-
 import type { Candle } from '@/lib/types';
 import { formatPrice, formatTimeShort } from '@/lib/utils';
 import { useCandleStore } from '@/stores/candleStore';
 import { useReceiptStore } from '@/stores/receiptStore';
 import { ANIMATION_SPEEDS, useUIStore } from '@/stores/uiStore';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useCallback, useState } from 'react';
+import { CandleReceipt } from '../receipts/CandleReceipt';
 import { TerminalKeypad } from './TerminalKeypad';
 import { TerminalScreen } from './TerminalScreen';
-
-
 
 // Attached LCD Display - customer-facing pole display showing live stats
 function AttachedLCDDisplay({
@@ -176,6 +174,58 @@ function CompletedReceipt({
   );
 }
 
+// Mobile Recording Header - separate box above POS
+function MobileRecordingHeader({
+  receiptNumber,
+  secondsRemaining,
+  candle
+}: {
+  receiptNumber: number;
+  secondsRemaining: number;
+  candle: Candle | null;
+}) {
+  const change = candle && candle.tradeCount > 0
+    ? ((candle.close - candle.open) / candle.open) * 100
+    : 0;
+  const isPositive = change >= 0;
+
+  return (
+    <div className="flex flex-col gap-2 bg-black text-green-500 px-4 py-3 rounded-lg border border-gray-800 shadow-lg mb-4 w-full max-w-[320px] lg:hidden relative overflow-hidden">
+      {/* Scanline effect */}
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] z-0 pointer-events-none bg-[length:100%_4px,3px_100%]" />
+      
+      {/* Row 1: Live Feed & Timer */}
+      <div className="flex justify-between items-center relative z-10">
+        <div className="flex items-center gap-2 text-[10px] font-mono text-green-500 bg-green-500/10 px-2 py-0.5 rounded-full border border-green-500/20">
+          <span className="relative flex h-1.5 w-1.5">
+            <span className="pulse-ring absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75" />
+            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500" />
+          </span>
+          LIVE FEED
+        </div>
+        <div className="font-mono font-bold tabular-nums text-xs text-gray-400">
+          {secondsRemaining}s
+        </div>
+      </div>
+
+      {/* Row 2: Receipt # & Price Stats */}
+      <div className="flex justify-between items-center relative z-10 border-t border-gray-800/50 pt-2 mt-1">
+        <div className="font-mono font-bold tracking-wider text-xs text-gray-300">
+          REC #{String(receiptNumber).padStart(6, '0')}
+        </div>
+        {candle && (
+          <div className="flex items-center gap-2 text-xs font-mono">
+            <span className="text-gray-300">{formatPrice(candle.close)}</span>
+            <span className={isPositive ? 'text-green-500' : 'text-red-500'}>
+              {isPositive ? '+' : ''}{change.toFixed(2)}%
+            </span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function POSTerminal() {
   const isPrinting = useUIStore((state) => state.isPrinting);
   const animationSpeedIndex = useUIStore((state) => state.animationSpeedIndex);
@@ -183,7 +233,16 @@ export function POSTerminal() {
   const completedCandles = useCandleStore((state) => state.completedCandles);
   const summaryCount = useReceiptStore((state) => state.summaryCount);
 
-
+  // State for expanded receipts on mobile
+  const [expandedReceipts, setExpandedReceipts] = useState<Set<string>>(new Set());
+  const toggleExpanded = useCallback((id: string) => {
+    setExpandedReceipts(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
 
   // Calculate live receipt data
   const now = Date.now();
@@ -195,9 +254,9 @@ export function POSTerminal() {
   const animationDuration = ANIMATION_SPEEDS[animationSpeedIndex].duration;
 
   return (
-    <div className="relative flex flex-col h-full">
-      {/* Attached LCD Display - shows live stats */}
-      <div className="shrink-0 pb-6">
+    <div className="relative flex flex-col h-auto lg:h-full">
+      {/* Attached LCD Display - shows live stats (Desktop Only) */}
+      <div className="shrink-0 pb-6 hidden lg:block">
         <AttachedLCDDisplay
           candle={currentCandle}
           receiptNumber={summaryCount + 1}
@@ -205,15 +264,24 @@ export function POSTerminal() {
         />
       </div>
 
-      {/* Terminal Body */}
-      <motion.div
-        className="bg-[#d4d4d8] dark:bg-[#1a1a1a] rounded-[2rem] p-6 shadow-terminal border-b-8 border-r-4 border-gray-400 dark:border-black relative w-full shrink-0"
-        animate={{
-          scale: isPrinting ? [1, 1.005, 1] : 1,
-        }}
-        transition={{ duration: 0.15 }}
-      >
-        {/* Screen */}
+      {/* Wrapper for Mobile - keeps POS and Header together */}
+      <div className="relative z-40 bg-[#e5e5e5] dark:bg-[#050505] pt-6 lg:static lg:bg-transparent lg:p-0 lg:z-auto w-full flex flex-col items-center">
+        {/* Mobile Recording Header */}
+        <MobileRecordingHeader 
+          receiptNumber={summaryCount + 1}
+          secondsRemaining={secondsRemaining}
+          candle={currentCandle}
+        />
+
+        {/* Terminal Body */}
+        <motion.div
+          className="bg-[#d4d4d8] dark:bg-[#1a1a1a] rounded-[2rem] p-4 lg:p-6 shadow-terminal border-b-8 border-r-4 border-gray-400 dark:border-black relative w-full shrink-0"
+          animate={{
+            scale: isPrinting ? [1, 1.005, 1] : 1,
+          }}
+          transition={{ duration: 0.15 }}
+        >
+          {/* Screen */}
         <div className="bg-black rounded-xl p-3 mb-4 relative overflow-hidden shadow-inner-screen border-2 border-gray-500 dark:border-gray-800">
           {/* Screen Header */}
           <div className="flex justify-between items-center mb-1 px-1">
@@ -262,59 +330,87 @@ export function POSTerminal() {
           <div className="flex-1 mx-6 h-1 bg-gray-800/50 rounded-full mt-auto mb-2" />
         </div>
       </motion.div>
+      </div>
 
       {/* Receipt Paper Area */}
-      <div className="relative mx-6 -mt-3 z-20 flex-1 min-h-0 overflow-hidden flex flex-col">
-        {/* Only show paper when there's a receipt */}
-        <AnimatePresence initial={false} mode="popLayout">
-          {completedCandles.slice(-3).reverse().map((candle, index) => {
-            // Calculate the receipt number based on the total count and index
-            // The most recent is summaryCount, the one before is summaryCount - 1, etc.
-            const receiptNumber = summaryCount - index;
-            
-            return (
-              <motion.div
-                key={candle.id}
-                layout
-                // Outer wrapper: handles space creation
-                initial={{ height: 0, opacity: 1 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ y: '100%', transition: { duration: animationDuration } }}
-                transition={{
-                  duration: animationDuration,
-                  ease: 'linear',
-                }}
-                className="relative z-10 overflow-hidden shrink-0"
-              >
-                {/* Inner wrapper: handles slide out */}
+      <div className="relative mx-6 -mt-9 z-20 h-auto lg:flex-1 lg:min-h-0 overflow-visible lg:overflow-hidden flex flex-col pb-12 lg:pb-0">
+        
+        {/* Desktop View: Last 3 receipts, non-interactive */}
+        <div className="hidden lg:flex flex-col h-full">
+          <AnimatePresence initial={false} mode="popLayout">
+            {completedCandles.slice(-3).reverse().map((candle, index) => {
+              const receiptNumber = summaryCount - index;
+              return (
                 <motion.div
-                  initial={{ y: '-100%' }}
-                  animate={{ y: '0%' }}
-                  transition={{
-                    duration: animationDuration,
-                    ease: 'linear',
-                  }}
+                  key={`desktop-${candle.id}`}
+                  layout
+                  initial={{ height: 0, opacity: 1 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ y: '100%', transition: { duration: animationDuration } }}
+                  transition={{ duration: animationDuration, ease: 'linear' }}
+                  className="relative z-10 overflow-hidden shrink-0"
                 >
-                  <div className="bg-[#fffdf5] dark:bg-[#e8e8e0]">
-                    <CompletedReceipt
-                      candle={candle}
-                      receiptNumber={receiptNumber}
-                    />
-                  </div>
-
-                  {/* Torn edge only after Receipt #1 (the first receipt of the session) */}
-                  {receiptNumber === 1 && (
-                    <div className="h-4 torn-edge-bottom" />
-                  )}
+                  <motion.div
+                    initial={{ y: '-100%' }}
+                    animate={{ y: '0%' }}
+                    transition={{ duration: animationDuration, ease: 'linear' }}
+                  >
+                    <div className="bg-[#fffdf5] dark:bg-[#e8e8e0]">
+                      <CompletedReceipt candle={candle} receiptNumber={receiptNumber} />
+                    </div>
+                    {receiptNumber === 1 && <div className="h-4 torn-edge-bottom" />}
+                  </motion.div>
                 </motion.div>
-              </motion.div>
-            );
-          })}
-        </AnimatePresence>
+              );
+            })}
+          </AnimatePresence>
+        </div>
 
-        {/* Portal Shadow: Bottom overlay connecting to Transaction Log */}
+        {/* Mobile View: All receipts, interactive */}
+        <div className="lg:hidden flex flex-col">
+          <AnimatePresence initial={false} mode="popLayout">
+            {completedCandles.slice().reverse().map((candle, index) => {
+              // For full list reversed:
+              // index 0 is newest (summaryCount)
+              // index 1 is summaryCount - 1
+              const receiptNumber = summaryCount - index;
+              const isExpanded = expandedReceipts.has(candle.id);
+
+              return (
+                <motion.div
+                  key={`mobile-${candle.id}`}
+                  layout
+                  initial={{ height: 0, opacity: 1 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: animationDuration, ease: 'linear' }}
+                  className="relative z-10 overflow-hidden shrink-0"
+                >
+                  <motion.div
+                    initial={{ y: '-100%' }}
+                    animate={{ y: '0%' }}
+                    transition={{ duration: animationDuration, ease: 'linear' }}
+                  >
+                    <div className="bg-[#fffdf5] dark:bg-[#e8e8e0]">
+                      <CandleReceipt 
+                        candle={candle} 
+                        receiptNumber={receiptNumber}
+                        isExpanded={isExpanded}
+                        onToggleExpand={() => toggleExpanded(candle.id)}
+                        isFirst={index === 0}
+                      />
+                    </div>
+                    {receiptNumber === 1 && <div className="h-4 torn-edge-bottom" />}
+                  </motion.div>
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
+        </div>
+
+        {/* Portal Shadow: Bottom overlay connecting to Transaction Log (Desktop Only) */}
         <div
-          className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-[#e5e5e5]/60 dark:from-[#050505]/60 to-transparent pointer-events-none z-30"
+          className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-[#e5e5e5]/60 dark:from-[#050505]/60 to-transparent pointer-events-none z-30 hidden lg:block"
         />
       </div>
     </div>

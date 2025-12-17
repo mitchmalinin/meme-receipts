@@ -1,14 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
-import { POSTerminal } from '@/components/terminal/POSTerminal';
+import { Header } from '@/components/layout/Header';
 import { TransactionLog } from '@/components/receipts/TransactionLog';
-import { useTradeStream } from '@/hooks/useTradeStream';
+import { POSTerminal } from '@/components/terminal/POSTerminal';
 import { useCandleBuilder } from '@/hooks/useCandleBuilder';
-import { useReceiptStore } from '@/stores/receiptStore';
+import { useTradeStream } from '@/hooks/useTradeStream';
 import { useCandleStore } from '@/stores/candleStore';
+import { useReceiptStore } from '@/stores/receiptStore';
+import { useEffect, useState } from 'react';
 
 export default function Home() {
   const [isDark, setIsDark] = useState(true);
@@ -44,22 +44,24 @@ export default function Home() {
   };
 
   return (
-    <div className="bg-gray-100 dark:bg-[#0a0a0a] text-gray-800 dark:text-gray-300 h-screen flex flex-col transition-colors duration-300 antialiased overflow-hidden">
+    <div className="bg-gray-100 dark:bg-[#0a0a0a] text-gray-800 dark:text-gray-300 min-h-screen lg:h-screen flex flex-col transition-colors duration-300 antialiased lg:overflow-hidden">
       {/* Header */}
-      <Header onToggleDarkMode={handleToggleDarkMode} />
+      <div className="hidden lg:block">
+        <Header onToggleDarkMode={handleToggleDarkMode} />
+      </div>
 
       {/* Main Content */}
-      <main className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-0 overflow-hidden min-h-0">
+      <main className="h-auto lg:flex-1 grid grid-cols-1 lg:grid-cols-2 gap-0 overflow-visible lg:overflow-hidden min-h-0">
         {/* Left Panel - POS Terminal with Receipt Output */}
-        <section className="border-r border-gray-300 dark:border-gray-800 flex flex-col bg-[#e5e5e5] dark:bg-[#050505] relative items-center overflow-hidden">
+        <section className="border-r border-gray-300 dark:border-gray-800 flex flex-col bg-[#e5e5e5] dark:bg-[#050505] relative z-30 items-center overflow-visible lg:overflow-hidden">
           {/* Dot pattern background */}
           <div className="absolute inset-0 opacity-5 pointer-events-none z-0 dot-pattern" />
 
           {/* Spacer - terminal starts near top */}
-          <div className="h-[3%] shrink-0" />
+          <div className="h-0 lg:h-[3%] shrink-0" />
 
           {/* Terminal with receipt output - flex-1 to fill remaining height */}
-          <div className="relative z-10 w-full max-w-[380px] px-4 flex-1 min-h-0 flex flex-col">
+          <div className="relative z-10 w-full max-w-[320px] lg:max-w-[380px] px-4 h-auto lg:flex-1 lg:min-h-0 flex flex-col">
             <POSTerminal />
           </div>
         </section>

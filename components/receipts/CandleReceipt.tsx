@@ -1,18 +1,19 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import type { Candle } from '@/lib/types';
-import { formatPrice, formatTimeShort, truncateWallet, formatSol } from '@/lib/utils';
+import { formatPrice, formatSol, formatTimeShort, truncateWallet } from '@/lib/utils';
+import { AnimatePresence, motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
 
 interface CandleReceiptProps {
   candle: Candle;
   receiptNumber: number;
   isExpanded?: boolean;
   onToggleExpand?: (expanded: boolean) => void;
+  isFirst?: boolean;
 }
 
-export function CandleReceipt({ candle, receiptNumber, isExpanded: controlledExpanded, onToggleExpand }: CandleReceiptProps) {
+export function CandleReceipt({ candle, receiptNumber, isExpanded: controlledExpanded, onToggleExpand, isFirst }: CandleReceiptProps) {
   // Use controlled state if provided, otherwise use local state
   const [localExpanded, setLocalExpanded] = useState(false);
   const isExpanded = controlledExpanded ?? localExpanded;
@@ -37,7 +38,7 @@ export function CandleReceipt({ candle, receiptNumber, isExpanded: controlledExp
     <div className="bg-[#fffdf5] dark:bg-[#e8e8e0] border-b-2 border-dashed border-gray-400 font-mono text-gray-800">
       {/* Main Receipt Content - Clickable */}
       <div
-        className="p-4 cursor-pointer hover:bg-black/5 transition-colors"
+        className={`p-3 lg:p-4 cursor-pointer hover:bg-black/5 transition-colors ${isFirst ? 'pt-14 lg:pt-4' : ''}`}
         onClick={handleToggle}
       >
         {/* Whale indicator - if candle had a whale trade */}
@@ -50,7 +51,7 @@ export function CandleReceipt({ candle, receiptNumber, isExpanded: controlledExp
         {/* Header row */}
         <div className="flex justify-between items-start mb-3">
           <div>
-            <div className="font-bold text-base">RECEIPT #{String(receiptNumber).padStart(6, '0')}</div>
+            <div className="font-bold text-sm lg:text-base">RECEIPT #{String(receiptNumber).padStart(6, '0')}</div>
             <div className="text-xs text-gray-500">
               {formatTimeShort(candle.startTime)} → {formatTimeShort(candle.endTime)} UTC
             </div>
@@ -64,7 +65,7 @@ export function CandleReceipt({ candle, receiptNumber, isExpanded: controlledExp
         <div className="border-t border-dashed border-gray-300 mb-3" />
 
         {/* OHLC Grid - larger text */}
-        <div className="grid grid-cols-2 gap-4 text-sm font-mono mb-3">
+        <div className="grid grid-cols-2 gap-4 text-xs lg:text-sm font-mono mb-3">
           <div className="space-y-2">
             <div className="flex justify-between">
               <span className="opacity-60">OPEN</span>

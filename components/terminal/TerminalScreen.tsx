@@ -10,7 +10,7 @@ const TerminalChart = dynamic(
 
 export function TerminalScreen() {
   return (
-    <div className="h-80 bg-gray-900 rounded border border-gray-800 relative overflow-hidden">
+    <div className="h-48 lg:h-80 bg-gray-900 rounded border border-gray-800 relative overflow-hidden">
       {/* Scanlines overlay */}
       <div className="scanlines absolute inset-0 pointer-events-none z-20 opacity-20" />
 

@@ -53,9 +53,9 @@ export function TransactionLog() {
   }, []);
 
   return (
-    <section className="flex flex-col bg-white dark:bg-[#121212] relative overflow-hidden h-full min-h-0">
+    <section className="hidden lg:flex flex-col bg-white dark:bg-[#121212] relative overflow-visible lg:overflow-hidden h-auto lg:h-full min-h-0">
       {/* Header */}
-      <div className="px-6 py-3 border-b border-gray-300 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-[#161616] z-20 shadow-sm shrink-0">
+      <div className="px-6 py-3 border-b border-gray-300 dark:border-gray-800 hidden lg:flex justify-between items-center bg-gray-50 dark:bg-[#161616] z-20 shadow-sm shrink-0 sticky top-0 lg:static">
         <h2 className="text-xs font-bold uppercase tracking-wider text-gray-500">
           Transaction Log
         </h2>
@@ -87,24 +87,24 @@ export function TransactionLog() {
       </div>
 
       {/* Receipt area */}
-      <div className="flex-1 relative min-h-0 overflow-hidden">
+      <div className="flex-1 relative min-h-0 overflow-visible lg:overflow-hidden">
         {/* Counter background */}
         <div className="absolute inset-0 bg-[#d6d3cd] dark:bg-[#111]" />
         <div className="absolute inset-0 z-0 pointer-events-none opacity-20 cross-pattern" />
 
         {/* Shadow at top */}
         <div
-          className="absolute top-0 left-0 right-0 h-16 bg-gradient-to-b from-[#d6d3cd]/60 dark:from-[#111]/60 to-transparent pointer-events-none z-30"
+          className="absolute top-0 left-0 right-0 h-16 bg-gradient-to-b from-[#d6d3cd]/60 dark:from-[#111]/60 to-transparent pointer-events-none z-30 hidden lg:block"
         />
 
         {/* Clip container - hides content above the visible area */}
-        <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute inset-0 overflow-visible lg:overflow-hidden">
           {/* Scrollable inner container */}
           <div
             ref={scrollRef}
-            className="h-full overflow-y-auto overflow-x-hidden flex justify-center"
+            className="h-auto lg:h-full overflow-visible lg:overflow-y-auto overflow-x-hidden flex justify-center"
           >
-            <div className="w-full max-w-[332px]">
+            <div className="w-full max-w-[332px] px-6 lg:px-0">
               {/* All receipts - newest first */}
               <AnimatePresence initial={false} mode="popLayout">
                 {displayReceipts.map((receipt) => (
