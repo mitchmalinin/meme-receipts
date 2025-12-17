@@ -10,9 +10,10 @@ interface CandleReceiptProps {
   candle: Candle;
   receiptNumber: number;
   isFirst?: boolean;
+  showSignature?: boolean;
 }
 
-export function CandleReceipt({ candle, receiptNumber, isFirst }: CandleReceiptProps) {
+export function CandleReceipt({ candle, receiptNumber, isFirst, showSignature }: CandleReceiptProps) {
   // Get token ticker from store
   const selectedToken = useTokenStore((state) => state.selectedToken);
   const tokenTicker = selectedToken?.symbol || 'TOKEN';
@@ -141,6 +142,32 @@ export function CandleReceipt({ candle, receiptNumber, isFirst }: CandleReceiptP
               <span className="font-semibold">{formatPrice(candle.close)}</span>
             </div>
           </div>
+
+          {/* Signature - only on transaction log */}
+          {showSignature && (
+            <div className="flex items-end gap-2 mt-3 mb-1">
+              <span className="text-[9px] text-gray-400 uppercase tracking-wider">Signature</span>
+              <span className="flex-1 border-b border-dashed border-gray-300" />
+              <svg
+                viewBox="0 0 100 30"
+                className="w-16 h-5 text-gray-500 -mb-1"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                {/* Cursive Mr.Wzrd signature */}
+                <path d="M2 22 Q4 8, 8 8 Q12 8, 12 16 Q12 22, 16 14 Q18 10, 20 22" />
+                <path d="M22 16 Q24 12, 28 14" />
+                <circle cx="32" cy="21" r="1" fill="currentColor" stroke="none" />
+                <path d="M38 6 Q36 14, 40 22 Q44 14, 48 22 Q52 14, 56 22 Q58 14, 56 6" />
+                <path d="M60 14 L68 14 L60 22 L68 22" />
+                <path d="M72 14 Q74 12, 78 14" />
+                <path d="M84 6 L84 22 Q84 14, 78 14 Q78 22, 84 22" />
+              </svg>
+            </div>
+          )}
 
           {/* Expand indicator - only show if there are trades to view */}
           {hasTrades && (

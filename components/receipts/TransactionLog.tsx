@@ -70,8 +70,8 @@ export function TransactionLog() {
                           animate: { height: 'auto', opacity: 1 },
                         }}
                         transition={{
-                          layout: { duration: currentSpeed.duration, ease: "linear" },
-                          height: { duration: currentSpeed.duration, ease: "linear" },
+                          layout: { duration: currentSpeed.duration, ease: "linear", delay: index === 0 ? currentSpeed.duration * 0.4 : 0 },
+                          height: { duration: currentSpeed.duration, ease: "linear", delay: index === 0 ? currentSpeed.duration * 0.4 : 0 },
                         }}
                         className="mb-0 relative z-10 overflow-hidden origin-top -mb-[2px]"
                       >
@@ -83,7 +83,8 @@ export function TransactionLog() {
                           }}
                           transition={{
                             duration: currentSpeed.duration,
-                            ease: "linear"
+                            ease: "linear",
+                            delay: index === 0 ? currentSpeed.duration * 0.4 : 0
                           }}
                         >
                           <div className="relative z-10 shadow-sm">
@@ -91,6 +92,7 @@ export function TransactionLog() {
                               candle={candle}
                               receiptNumber={receiptNumber}
                               isFirst={receiptNumber === 1}
+                              showSignature
                             />
                           </div>
                         </motion.div>
