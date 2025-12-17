@@ -219,11 +219,10 @@ export function MobileFloatingBar() {
                       className="bg-transparent border-none outline-none text-xs font-mono text-gray-300 w-full placeholder:text-gray-600"
                     />
                     {inputValue && (
-                      <button 
+                      <button
                         onClick={() => {
                           setInputValue('');
                           clearSearch();
-                          inputRef.current?.focus();
                         }}
                         className="text-gray-500 hover:text-white px-2"
                       >
