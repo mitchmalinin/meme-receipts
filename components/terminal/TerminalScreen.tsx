@@ -10,6 +10,40 @@ import { useTokenStore } from '@/stores/tokenStore';
 import { MAX_SESSION_RECEIPTS, useUIStore } from '@/stores/uiStore';
 import { useCallback, useEffect, useRef } from 'react';
 
+// Idle timeout in milliseconds (30 seconds + small buffer)
+const IDLE_TIMEOUT_MS = 32000;
+
+// Create an idle candle when no activity for 30+ seconds
+function createIdleCandle(
+  lastPrice: number,
+  candleNumber: number,
+  durationMs: number
+): Candle {
+  const now = Date.now();
+  // Align to 30-second boundary
+  const startTime = Math.floor(now / durationMs) * durationMs;
+
+  return {
+    id: generateId(),
+    candleNumber,
+    startTime,
+    endTime: startTime + durationMs,
+    open: lastPrice,
+    high: lastPrice,
+    low: lastPrice,
+    close: lastPrice,
+    volume: 0,
+    buyVolume: 0,
+    sellVolume: 0,
+    tradeCount: 0,
+    buyCount: 0,
+    sellCount: 0,
+    trades: [],
+    fees: { total: 0, creator: 0, protocol: 0 },
+    isIdle: true, // Flag for idle receipt
+  };
+}
+
 // Convert chart candle data to our Candle format for receipts
 function convertChartCandleToReceipt(
   candle: CandleData,
@@ -67,6 +101,11 @@ export function TerminalScreen() {
   const { initializeSnapshot, fetchTradesForCandle, resetSnapshot } = useTradeSnapshot();
   const prevTokenRef = useRef<string | null>(null);
 
+  // Idle candle tracking
+  const lastCandleTimeRef = useRef<number>(0);
+  const lastKnownPriceRef = useRef<number>(0);
+  const idleIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
   // Initialize trade snapshot when token changes
   useEffect(() => {
     const tokenAddress = selectedToken?.address;
@@ -76,11 +115,105 @@ export function TerminalScreen() {
       resetSnapshot();
       initializeSnapshot(tokenAddress);
       prevTokenRef.current = tokenAddress;
+      // Reset idle tracking on token change
+      lastCandleTimeRef.current = Date.now();
+      // Try to get initial price from selected pair
+      const pairPrice = selectedPair?.priceUsd ? parseFloat(selectedPair.priceUsd) : 0;
+      lastKnownPriceRef.current = pairPrice;
+      console.log('[TerminalScreen] Initial price from pair:', pairPrice);
     } else if (!tokenAddress && prevTokenRef.current) {
       resetSnapshot();
       prevTokenRef.current = null;
+      lastCandleTimeRef.current = 0;
+      lastKnownPriceRef.current = 0;
     }
-  }, [selectedToken?.address, initializeSnapshot, resetSnapshot]);
+  }, [selectedToken?.address, selectedPair?.priceUsd, initializeSnapshot, resetSnapshot]);
+
+  // Print an idle receipt when no activity
+  const printIdleReceipt = useCallback(() => {
+    // Don't print if out of paper or no token
+    if (isOutOfPaper || !selectedToken?.address) return;
+
+    // Need a price to show
+    if (lastKnownPriceRef.current === 0) {
+      console.log('[TerminalScreen] No price data yet, skipping idle receipt');
+      return;
+    }
+
+    // Hide test receipt if showing
+    const { showTestReceipt, hideTestReceipt } = useUIStore.getState();
+    if (showTestReceipt) {
+      hideTestReceipt();
+    }
+
+    const durationMs = getCandleDurationMs(chartTimeframe);
+    const receiptNumber = summaryCount + 1;
+    const candle = createIdleCandle(lastKnownPriceRef.current, receiptNumber, durationMs);
+
+    console.log('[TerminalScreen] PRINTING IDLE RECEIPT - no activity for 30+ seconds');
+
+    // Trigger printing animation
+    setIsPrinting(true);
+    setPrintPhase('ejecting');
+
+    // Complete the candle in store
+    completeCandle(candle);
+
+    // Add receipt to store
+    addReceipt({
+      type: 'summary',
+      id: candle.id,
+      receiptNumber,
+      candle,
+      isExpanded: false,
+    });
+
+    // Increment session receipt count
+    incrementSessionReceipts();
+
+    // Update last candle time
+    lastCandleTimeRef.current = Date.now();
+
+    // Reset print state after animation
+    setTimeout(() => {
+      setPrintPhase('printing');
+      setIsPrinting(false);
+    }, 600);
+  }, [isOutOfPaper, selectedToken?.address, chartTimeframe, summaryCount, setIsPrinting, setPrintPhase, completeCandle, addReceipt, incrementSessionReceipts]);
+
+  // Idle detection timer - check every 5 seconds if we need to print an idle receipt
+  useEffect(() => {
+    // Only run when a token is selected
+    if (!selectedToken?.address) {
+      if (idleIntervalRef.current) {
+        clearInterval(idleIntervalRef.current);
+        idleIntervalRef.current = null;
+      }
+      return;
+    }
+
+    // Initialize last candle time if not set
+    if (lastCandleTimeRef.current === 0) {
+      lastCandleTimeRef.current = Date.now();
+    }
+
+    // Check every 5 seconds
+    idleIntervalRef.current = setInterval(() => {
+      const timeSinceLastCandle = Date.now() - lastCandleTimeRef.current;
+
+      if (timeSinceLastCandle >= IDLE_TIMEOUT_MS) {
+        console.log(`[TerminalScreen] Idle detected: ${Math.round(timeSinceLastCandle / 1000)}s since last candle`);
+        printIdleReceipt();
+      }
+    }, 5000);
+
+    return () => {
+      if (idleIntervalRef.current) {
+        clearInterval(idleIntervalRef.current);
+        idleIntervalRef.current = null;
+      }
+    };
+  }, [selectedToken?.address, printIdleReceipt]);
 
   // Handle new candle detected by chart - THIS IS THE SINGLE SOURCE OF TRUTH
   const handleNewCandle = useCallback(async (completedCandle: CandleData, newCandle: CandleData) => {
@@ -155,12 +288,16 @@ export function TerminalScreen() {
     const currentCandleData = convertChartCandleToReceipt(newCandle, durationMs, receiptNumber + 1);
     setCurrentCandle(currentCandleData);
 
+    // Reset idle tracking - we got a real candle
+    lastCandleTimeRef.current = Date.now();
+    lastKnownPriceRef.current = newCandle.close;
+
     // Reset print state after animation
     setTimeout(() => {
       setPrintPhase('printing');
       setIsPrinting(false);
     }, 600);
-  }, [isOutOfPaper, chartTimeframe, summaryCount, setIsPrinting, setPrintPhase, completeCandle, addReceipt, incrementSessionReceipts, setCurrentCandle, selectedToken?.address, fetchTradesForCandle]);
+  }, [isOutOfPaper, chartTimeframe, summaryCount, setIsPrinting, setPrintPhase, completeCandle, addReceipt, incrementSessionReceipts, setCurrentCandle, selectedToken?.address, selectedPair?.pairAddress, fetchTradesForCandle]);
 
   return (
     <div className="h-48 lg:h-80 bg-gray-900 rounded border border-gray-800 relative overflow-hidden">

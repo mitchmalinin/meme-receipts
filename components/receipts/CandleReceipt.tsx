@@ -23,6 +23,7 @@ export function CandleReceipt({ candle, receiptNumber, isFirst, showSignature }:
   const change = ((candle.close - candle.open) / candle.open) * 100;
   const isPositive = change >= 0;
   const hasTrades = candle.trades.length > 0;
+  const isIdle = candle.isIdle === true;
 
   return (
     <div className="relative font-mono text-gray-800">
@@ -44,15 +45,36 @@ export function CandleReceipt({ candle, receiptNumber, isFirst, showSignature }:
                 {formatTimeShort(candle.startTime)} → {formatTimeShort(candle.endTime)} UTC
               </div>
             </div>
-            <div className={`font-bold text-sm ${isPositive ? 'text-green-700' : 'text-red-700'}`}>
-              {isPositive ? '+' : ''}{change.toFixed(2)}%
-            </div>
+            {isIdle ? (
+              <div className="font-bold text-sm text-gray-400">
+                IDLE
+              </div>
+            ) : (
+              <div className={`font-bold text-sm ${isPositive ? 'text-green-700' : 'text-red-700'}`}>
+                {isPositive ? '+' : ''}{change.toFixed(2)}%
+              </div>
+            )}
           </div>
 
           {/* Divider */}
           <div className="border-t border-dashed border-gray-300 mb-3" />
 
-          {/* Line items section */}
+          {/* Idle Receipt Message */}
+          {isIdle && (
+            <div className="text-center py-4 mb-3">
+              <div className="text-gray-500 text-xs font-bold tracking-wider mb-2">
+                ⏸ LOW VOLUME
+              </div>
+              <div className="text-gray-400 text-[10px]">
+                No trades in this period
+              </div>
+              <div className="text-gray-400 text-[10px] mt-1">
+                Price: {formatPrice(candle.close)}
+              </div>
+            </div>
+          )}
+
+          {/* Line items section - hide most details for idle receipts */}
           <div className="space-y-2 text-xs lg:text-sm font-mono mb-3">
             {/* Ticker */}
             <div className="flex items-baseline">
@@ -61,7 +83,8 @@ export function CandleReceipt({ candle, receiptNumber, isFirst, showSignature }:
               <span className="font-bold text-gray-800">${tokenTicker.toUpperCase()}</span>
             </div>
 
-            {/* Candle */}
+            {/* Candle - hide for idle */}
+            {!isIdle && (
             <div>
               <div className="flex items-baseline">
                 <span className="opacity-60">CANDLE</span>
@@ -74,8 +97,10 @@ export function CandleReceipt({ candle, receiptNumber, isFirst, showSignature }:
                 {formatTimeShort(candle.startTime)} → {formatTimeShort(candle.endTime)} UTC
               </div>
             </div>
+            )}
 
-            {/* Buys */}
+            {/* Buys - hide for idle */}
+            {!isIdle && (
             <div className="text-green-700">
               <div className="flex items-baseline">
                 <span className="opacity-60">BUYS</span>
@@ -90,8 +115,10 @@ export function CandleReceipt({ candle, receiptNumber, isFirst, showSignature }:
                 </div>
               )}
             </div>
+            )}
 
-            {/* Sells */}
+            {/* Sells - hide for idle */}
+            {!isIdle && (
             <div className="text-red-700">
               <div className="flex items-baseline">
                 <span className="opacity-60">SELLS</span>
@@ -106,8 +133,10 @@ export function CandleReceipt({ candle, receiptNumber, isFirst, showSignature }:
                 </div>
               )}
             </div>
+            )}
 
-            {/* Volume */}
+            {/* Volume - hide for idle */}
+            {!isIdle && (
             <div className={isPositive ? 'text-green-700' : 'text-red-700'}>
               <div className="flex items-baseline">
                 <span className="opacity-60">VOLUME</span>
@@ -121,9 +150,11 @@ export function CandleReceipt({ candle, receiptNumber, isFirst, showSignature }:
                 </span>
               </div>
             </div>
+            )}
           </div>
 
-          {/* OHLC Grid */}
+          {/* OHLC Grid - hide for idle */}
+          {!isIdle && (
           <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs lg:text-sm font-mono mb-3">
             <div className="flex justify-between">
               <span className="opacity-60">OPEN</span>
@@ -142,6 +173,7 @@ export function CandleReceipt({ candle, receiptNumber, isFirst, showSignature }:
               <span className="font-semibold">{formatPrice(candle.close)}</span>
             </div>
           </div>
+          )}
 
           {/* Signature - only on transaction log */}
           {showSignature && (

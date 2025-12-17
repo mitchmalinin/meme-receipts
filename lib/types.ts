@@ -32,6 +32,7 @@ export interface Candle {
     creator: number;
     protocol: number;
   };
+  isIdle?: boolean; // True when no trading activity in this candle period
 }
 
 // Receipt types
